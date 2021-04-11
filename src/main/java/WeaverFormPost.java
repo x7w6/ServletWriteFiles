@@ -83,7 +83,7 @@ public class WeaverFormPost extends HttpServlet {
 		data.put("count", count);
 		
 		// SAVE TO FILE
-		String path = getSystemPath()+"/WeaverWeek4.dat";
+		String path = getSystemPath()+"WeaverWeek4.dat";
 		File customDir = new File(path);
 
 		if (!customDir.exists())
