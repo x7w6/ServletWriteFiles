@@ -12,7 +12,7 @@
 		<h1>Welcome to Week 4</h1>
 		<br/>
 		
-		<a href="WeaverFormPost.java">
+		<a href="WeaverFormPost">
 			<button class="btn btn-primary">Get Started</button>		
 		</a>	
 	
