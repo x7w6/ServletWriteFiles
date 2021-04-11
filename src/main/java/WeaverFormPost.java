@@ -29,7 +29,8 @@ public class WeaverFormPost extends HttpServlet {
 	
 	// creating a My HashTable Dictionary
 	Hashtable<String, String> data = new Hashtable<String, String>();
-   
+	RandomAccessFile file;
+	
     
     // contstructor, initial assignment
     public WeaverFormPost() {
@@ -80,29 +81,38 @@ public class WeaverFormPost extends HttpServlet {
 		data.put("item", item);
 		data.put("info", info);
 		data.put("count", count);
-	
-		// If new day clear previous entries
-		if(isNew != null)
-			System.out.println("Deleting previous logs...");
 		
 		// SAVE TO FILE
-		
-		String path = getSystemPath();
-		
+		String path = getSystemPath()+"/WeaverWeek4.dat";
 		File customDir = new File(path);
 
 		if (!customDir.exists())
 		    customDir.mkdirs();
 			
-		RandomAccessFile file = new RandomAccessFile(path+"/WeaverWeek4.dat", "rw");
+		file = new RandomAccessFile(path, "rw");
 		
+		// If new day clear previous entries
+		if(isNew != null) {
+			System.out.println("Deleting previous logs...");
+			PrintWriter write = new PrintWriter(path);
+			write.print("");
+			write.close();
+		}
+			
+		
+		// save form data
 		writeToFile(file);
 		
-		// OUTPUT DATA
-		dataAsTable(page);
+		// output form data to user browser
+		readFile(file, page);
+		
+		// close connection
+		file.close();
+			
 	}
 	
 	
+	// Determine whether files are under windows or mac/linux
 	private String getSystemPath() {
 		String os = System.getProperty("os.name");
 		String path = "c:\\tmp\\";
@@ -141,6 +151,7 @@ public class WeaverFormPost extends HttpServlet {
 	}
 	
 	
+	// serve this markup on Get request
 	private void printFormPage(PrintWriter output) {
 		
 		for(String htmlOpen : startingMarkup)
@@ -155,47 +166,74 @@ public class WeaverFormPost extends HttpServlet {
 			output.println(htmlEnd);
 	}
 
+	
+	// store form data to file
+	private void writeToFile(RandomAccessFile file) {
+		int bufferLength = 20;
+		StringBuffer buffer = new StringBuffer(); // Buffer: mutable string
+		
+		buffer.setLength(bufferLength);
+		buffer.setCharAt(bufferLength - 1, '\n');
+		
+		// append form data to Buffer
+		data.forEach((key, value) -> {
+			buffer.append(String.format("%s: %s\n", key, value));
+		});
 
-	private void dataAsTable(PrintWriter output) {
+		try {
+			file.seek(file.length());
+			
+			// write to file
+			file.writeBytes(buffer.toString());
+			
+			// reset file pointer
+			file.seek(0);
+		
+		} catch (IOException e) {
+			System.out.println(e);
+		}
+	}
+	
+	
+	// output file data to html page
+	private void readFile(RandomAccessFile file, PrintWriter output) {
+		String tempData;
+		
 		for(String htmlOpen : startingMarkup)
 			output.println(htmlOpen);
+		
+		output.println("<h1>Submission Successful</h1>");
 		
 		output.println("<table class='table'>");
 		output.println("<thead>");
 		
-		
 		// Fill Table Heading
 		output.println("<tr>");
-		output.println("<th scope='col'>Item</th>");
-		output.println("<th scope='col'>Description</th>");
-		output.println("<th scope='col'>Count</th>");
+		output.println("<th scope='col'>Previous Logs</th>");
 		output.println("</tr>");
 		output.println("</thead>");
 		output.println("<tbody>");
-		output.println("<tr>");
 		
-		output.println(String.format("<td>%s</td>", data.get("item")));
-		output.println(String.format("<td>%s</td>", data.get("info")));
-		output.println(String.format("<td>%s</td>", data.get("count")));
-
-		output.println("</tr>");
+		try {
+			// loop through file and output data
+			while((tempData = file.readLine()) != null) {
+				System.out.println(tempData);
+				
+				output.println("<tr>");
+				output.println(String.format("<td>%s</td>", tempData));
+				output.println("</tr>");
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+		
 		output.println("</tbody>");
 		output.println("</table>");
 		
 		for(String htmlEnd : endingMarkup)
 			output.println(htmlEnd);
+				
+	}
 
-	}
-	
-	
-	private void writeToFile(RandomAccessFile file) {
-		try {
-			file.writeUTF(String.format("%s", data.get("item")));
-			file.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			System.out.println(e);
-		}
-	}
-	
 }
